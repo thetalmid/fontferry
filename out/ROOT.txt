@@ -1,0 +1,19 @@
+FontFerry store · protocol fonttext/1
+
+generated (UTC): 2026-10-21T04:47:15.361Z
+fonts: 4
+
+- chakra-petch-700 (Chakra Petch 700) 9900 bytes · 2 chunks · sha256 CE5095DC1CB200AAA939E38067A0677018D10E9F26EC38CDCF1557AC524FC775 · rebuilt as chakra-petch-700.woff2
+- open-sauce-sans-400 (Open Sauce Sans 400) 16032 bytes · 2 chunks · sha256 0A7F5C137942C119EE6CBD5F731FDD8532451F11346A5D4A728BC39847171DEF · rebuilt as open-sauce-sans-400.woff2
+- open-sauce-sans-600 (Open Sauce Sans 600) 16508 bytes · 3 chunks · sha256 3E73A35B1B1713AD5A6E1BDBE78211A399C07B0CEFA74A8D41B15B03B19E7B1A · rebuilt as open-sauce-sans-600.woff2
+- open-sauce-sans-700 (Open Sauce Sans 700) 16492 bytes · 3 chunks · sha256 A3F7AD8708AEDE18B0BA913507D831DE97B7838AA77A90F55B5F8D6C05D1B6D7 · rebuilt as open-sauce-sans-700.woff2
+
+Consuming (agent, offline sandbox):
+  1. fetch /manifest.txt (or per-font /chunks/<id>/000.txt …) as plain text
+  2. save each chunk page verbatim to <dir>/<nnn>.txt
+  3. run  client/rebuild.sh <manifest.json> <dir> <out.woff2>
+
+Consuming (networked sandbox):
+  sh client/fetch_sandbox.sh <manifest-url> <out.woff2>
+
+Licenses: OFL-1.1 for every font (see /licenses/).

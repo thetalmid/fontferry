@@ -1,0 +1,212 @@
+[
+  {
+    "protocol": "fonttext/1",
+    "font_id": "chakra-petch-700",
+    "family": "Chakra Petch",
+    "weight": 700,
+    "style": "normal",
+    "subset": "latin",
+    "format": "woff2",
+    "rebuilt_name": "chakra-petch-700.woff2",
+    "encoding": "base64",
+    "line_width": 76,
+    "newline": "lf",
+    "chunk_raw_bytes": 8190,
+    "whole_file_sha256": "CE5095DC1CB200AAA939E38067A0677018D10E9F26EC38CDCF1557AC524FC775",
+    "original_size_bytes": 9900,
+    "base64_chars": 13200,
+    "chunks": [
+      {
+        "index": 0,
+        "url": "/chunks/chakra-petch-700/000.txt",
+        "sha256": "1CD90897A5F3F61C873CBED93DB22DDFA360D3878502CDC8793A7FBE23BF1F8C",
+        "bytes": 8190,
+        "first_byte": 0,
+        "last_byte": 8189,
+        "lines": 146
+      },
+      {
+        "index": 1,
+        "url": "/chunks/chakra-petch-700/001.txt",
+        "sha256": "EA22324B80D0E22369E60BCE283A0AC8A55C1297B724789919DF6F2DACADBC33",
+        "bytes": 1710,
+        "first_byte": 8190,
+        "last_byte": 9899,
+        "lines": 32
+      }
+    ],
+    "upstream": [
+      {
+        "url": "https://fonts.gstatic.com/s/chakrapetch/v13/cIflMapbsEk7TDLdtEz1BwkeJI91R5_F.woff2",
+        "note": "Google Fonts gstatic v13 (latin subset)"
+      }
+    ],
+    "license": {
+      "spdx": "OFL-1.1",
+      "notice": "Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch.git)",
+      "text_url": "/licenses/OFL-ChakraPetch.txt"
+    }
+  },
+  {
+    "protocol": "fonttext/1",
+    "font_id": "open-sauce-sans-400",
+    "family": "Open Sauce Sans",
+    "weight": 400,
+    "style": "normal",
+    "subset": "latin",
+    "format": "woff2",
+    "rebuilt_name": "open-sauce-sans-400.woff2",
+    "encoding": "base64",
+    "line_width": 76,
+    "newline": "lf",
+    "chunk_raw_bytes": 8190,
+    "whole_file_sha256": "0A7F5C137942C119EE6CBD5F731FDD8532451F11346A5D4A728BC39847171DEF",
+    "original_size_bytes": 16032,
+    "base64_chars": 21376,
+    "chunks": [
+      {
+        "index": 0,
+        "url": "/chunks/open-sauce-sans-400/000.txt",
+        "sha256": "D5B3A5DE08D6218486BA54D604AB104BB84647FDA6C54E8B5219EC2FE3C026C2",
+        "bytes": 8190,
+        "first_byte": 0,
+        "last_byte": 8189,
+        "lines": 146
+      },
+      {
+        "index": 1,
+        "url": "/chunks/open-sauce-sans-400/001.txt",
+        "sha256": "D6F9C7940DA2C564EAD6C0246FEE020986993F3726C6E8B2C4B5B4E0F2AA2821",
+        "bytes": 7842,
+        "first_byte": 8190,
+        "last_byte": 16031,
+        "lines": 140
+      }
+    ],
+    "upstream": [
+      {
+        "url": "https://raw.githubusercontent.com/marcologous/Open-Sauce-Fonts/master/fonts/ttf/OpenSauceSans-Regular.ttf",
+        "note": "Open Sauce Sans foundry TTF v1.478 (OFL)"
+      }
+    ],
+    "license": {
+      "spdx": "OFL-1.1",
+      "notice": "Copyright (c) 2020 The Open Sauce Sans Authors (https://github.com/marcologous/Open-Sauce-Fonts)",
+      "text_url": "/licenses/OFL-OpenSauceSans.txt"
+    }
+  },
+  {
+    "protocol": "fonttext/1",
+    "font_id": "open-sauce-sans-600",
+    "family": "Open Sauce Sans",
+    "weight": 600,
+    "style": "normal",
+    "subset": "latin",
+    "format": "woff2",
+    "rebuilt_name": "open-sauce-sans-600.woff2",
+    "encoding": "base64",
+    "line_width": 76,
+    "newline": "lf",
+    "chunk_raw_bytes": 8190,
+    "whole_file_sha256": "3E73A35B1B1713AD5A6E1BDBE78211A399C07B0CEFA74A8D41B15B03B19E7B1A",
+    "original_size_bytes": 16508,
+    "base64_chars": 22012,
+    "chunks": [
+      {
+        "index": 0,
+        "url": "/chunks/open-sauce-sans-600/000.txt",
+        "sha256": "0C8191DA6069820639322ADAE69E8390F4135618AB817CCD5427A50DF107C104",
+        "bytes": 8190,
+        "first_byte": 0,
+        "last_byte": 8189,
+        "lines": 146
+      },
+      {
+        "index": 1,
+        "url": "/chunks/open-sauce-sans-600/001.txt",
+        "sha256": "A9B1C8792D1170D771BFE18250F40F4982297EC35DF571EC81AF2CB1744E3578",
+        "bytes": 8190,
+        "first_byte": 8190,
+        "last_byte": 16379,
+        "lines": 146
+      },
+      {
+        "index": 2,
+        "url": "/chunks/open-sauce-sans-600/002.txt",
+        "sha256": "99DECCD679690C1BB719EFD92D6951EA7705E20A0487F284B80F870D65375DD0",
+        "bytes": 128,
+        "first_byte": 16380,
+        "last_byte": 16507,
+        "lines": 5
+      }
+    ],
+    "upstream": [
+      {
+        "url": "https://raw.githubusercontent.com/marcologous/Open-Sauce-Fonts/master/fonts/ttf/OpenSauceSans-SemiBold.ttf",
+        "note": "Open Sauce Sans foundry TTF v1.478 (OFL)"
+      }
+    ],
+    "license": {
+      "spdx": "OFL-1.1",
+      "notice": "Copyright (c) 2020 The Open Sauce Sans Authors (https://github.com/marcologous/Open-Sauce-Fonts)",
+      "text_url": "/licenses/OFL-OpenSauceSans.txt"
+    }
+  },
+  {
+    "protocol": "fonttext/1",
+    "font_id": "open-sauce-sans-700",
+    "family": "Open Sauce Sans",
+    "weight": 700,
+    "style": "normal",
+    "subset": "latin",
+    "format": "woff2",
+    "rebuilt_name": "open-sauce-sans-700.woff2",
+    "encoding": "base64",
+    "line_width": 76,
+    "newline": "lf",
+    "chunk_raw_bytes": 8190,
+    "whole_file_sha256": "A3F7AD8708AEDE18B0BA913507D831DE97B7838AA77A90F55B5F8D6C05D1B6D7",
+    "original_size_bytes": 16492,
+    "base64_chars": 21992,
+    "chunks": [
+      {
+        "index": 0,
+        "url": "/chunks/open-sauce-sans-700/000.txt",
+        "sha256": "A737AB9586F38BB54A22CE4ACBC72B818607D27220CCF378F50607B50725F43D",
+        "bytes": 8190,
+        "first_byte": 0,
+        "last_byte": 8189,
+        "lines": 146
+      },
+      {
+        "index": 1,
+        "url": "/chunks/open-sauce-sans-700/001.txt",
+        "sha256": "8B10E9FD306C963CF54906E6112BDA1F50493E47FB95ABD805F5B987C94BB1A6",
+        "bytes": 8190,
+        "first_byte": 8190,
+        "last_byte": 16379,
+        "lines": 146
+      },
+      {
+        "index": 2,
+        "url": "/chunks/open-sauce-sans-700/002.txt",
+        "sha256": "F6D5BB21C71F6A78E46DF738D03E3D838C608A0A5CAC99CDCE297DF16A4CF180",
+        "bytes": 112,
+        "first_byte": 16380,
+        "last_byte": 16491,
+        "lines": 4
+      }
+    ],
+    "upstream": [
+      {
+        "url": "https://raw.githubusercontent.com/marcologous/Open-Sauce-Fonts/master/fonts/ttf/OpenSauceSans-Bold.ttf",
+        "note": "Open Sauce Sans foundry TTF v1.478 (OFL)"
+      }
+    ],
+    "license": {
+      "spdx": "OFL-1.1",
+      "notice": "Copyright (c) 2020 The Open Sauce Sans Authors (https://github.com/marcologous/Open-Sauce-Fonts)",
+      "text_url": "/licenses/OFL-OpenSauceSans.txt"
+    }
+  }
+]

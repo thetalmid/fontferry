@@ -1,0 +1,6 @@
+# Keep LF line endings everywhere: base64 payloads and shell scripts
+# must stay byte-stable across checkouts (CRLF would break hashing tools
+# that are not CR-tolerant).
+* text=auto eol=lf
+*.woff2 binary
+*.ttf binary

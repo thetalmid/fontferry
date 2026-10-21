@@ -1,0 +1,17 @@
+# FontFerry reassembly manifest — protocol fonttext/1
+# Font: chakra-petch-700 (Chakra Petch 700)
+# How to rebuild: place this file and every chunk file below in one dir, then
+#   sh rebuild.sh MANIFEST.txt <dir> <out.woff2>
+font_id=chakra-petch-700
+format=woff2
+encoding=base64
+line_width=76
+newline=lf
+chunk_raw_bytes=8190
+whole_file_sha256=CE5095DC1CB200AAA939E38067A0677018D10E9F26EC38CDCF1557AC524FC775
+original_size_bytes=9900
+chunk_count=2
+chunk_0_sha256=1CD90897A5F3F61C873CBED93DB22DDFA360D3878502CDC8793A7FBE23BF1F8C
+chunk_0_file=000.txt
+chunk_1_sha256=EA22324B80D0E22369E60BCE283A0AC8A55C1297B724789919DF6F2DACADBC33
+chunk_1_file=001.txt

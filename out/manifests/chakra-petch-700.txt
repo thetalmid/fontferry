@@ -1,0 +1,48 @@
+{
+  "protocol": "fonttext/1",
+  "font_id": "chakra-petch-700",
+  "family": "Chakra Petch",
+  "weight": 700,
+  "style": "normal",
+  "subset": "latin",
+  "format": "woff2",
+  "rebuilt_name": "chakra-petch-700.woff2",
+  "encoding": "base64",
+  "line_width": 76,
+  "newline": "lf",
+  "chunk_raw_bytes": 8190,
+  "whole_file_sha256": "CE5095DC1CB200AAA939E38067A0677018D10E9F26EC38CDCF1557AC524FC775",
+  "original_size_bytes": 9900,
+  "base64_chars": 13200,
+  "chunks": [
+    {
+      "index": 0,
+      "url": "/chunks/chakra-petch-700/000.txt",
+      "sha256": "1CD90897A5F3F61C873CBED93DB22DDFA360D3878502CDC8793A7FBE23BF1F8C",
+      "bytes": 8190,
+      "first_byte": 0,
+      "last_byte": 8189,
+      "lines": 146
+    },
+    {
+      "index": 1,
+      "url": "/chunks/chakra-petch-700/001.txt",
+      "sha256": "EA22324B80D0E22369E60BCE283A0AC8A55C1297B724789919DF6F2DACADBC33",
+      "bytes": 1710,
+      "first_byte": 8190,
+      "last_byte": 9899,
+      "lines": 32
+    }
+  ],
+  "upstream": [
+    {
+      "url": "https://fonts.gstatic.com/s/chakrapetch/v13/cIflMapbsEk7TDLdtEz1BwkeJI91R5_F.woff2",
+      "note": "Google Fonts gstatic v13 (latin subset)"
+    }
+  ],
+  "license": {
+    "spdx": "OFL-1.1",
+    "notice": "Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch.git)",
+    "text_url": "/licenses/OFL-ChakraPetch.txt"
+  }
+}

@@ -1,0 +1,19 @@
+# FontFerry reassembly manifest — protocol fonttext/1
+# Font: open-sauce-sans-700 (Open Sauce Sans 700)
+# How to rebuild: place this file and every chunk file below in one dir, then
+#   sh rebuild.sh MANIFEST.txt <dir> <out.woff2>
+font_id=open-sauce-sans-700
+format=woff2
+encoding=base64
+line_width=76
+newline=lf
+chunk_raw_bytes=8190
+whole_file_sha256=A3F7AD8708AEDE18B0BA913507D831DE97B7838AA77A90F55B5F8D6C05D1B6D7
+original_size_bytes=16492
+chunk_count=3
+chunk_0_sha256=A737AB9586F38BB54A22CE4ACBC72B818607D27220CCF378F50607B50725F43D
+chunk_0_file=000.txt
+chunk_1_sha256=8B10E9FD306C963CF54906E6112BDA1F50493E47FB95ABD805F5B987C94BB1A6
+chunk_1_file=001.txt
+chunk_2_sha256=F6D5BB21C71F6A78E46DF738D03E3D838C608A0A5CAC99CDCE297DF16A4CF180
+chunk_2_file=002.txt
