@@ -17,12 +17,17 @@
  *   web/index.html             - demo page with @font-face data: URIs
  *
  * Determinism: fixed chunk naming, sorted keys, stable output. Re-running the
- * builder with identical inputs yields identical bytes.
+ * builder with identical inputs yields identical bytes — except
+ * `generated_utc` in the store index (store.json / store.txt / ROOT.txt).
  *
- * Chunking model: chunks are BYTE ranges of the original file (multiples of 3
- * bytes so base64 groups stay aligned; each chunk is padded to %4 == 0).
- * Whole-file and per-chunk SHA-256 are computed on the binary bytes, so checks
- * are independent of line wrapping / whitespace.
+ * Chunking model: chunks are BYTE ranges of the original file. Ranges are
+ * multiples of 3 bytes so base64 groups stay aligned across chunk boundaries;
+ * each chunk's base64 is independently padded (that is what makes per-chunk
+ * pages self-contained). Whole-file and per-chunk SHA-256 are computed on the
+ * binary bytes, so checks are independent of line wrapping / whitespace.
+ *
+ * Inputs are pinned by sources/sources.lock (SHA-256 per file); the build
+ * refuses to proceed if any input hash differs.
  */
 
 import { createHash } from 'node:crypto';
@@ -35,11 +40,61 @@ const ROOT = join(__dirname, '..');
 const SRC = join(ROOT, 'sources');
 const OUT = join(ROOT, 'out');
 const WEB = join(ROOT, 'web');
+const LOCK = join(SRC, 'sources.lock');
 
 const LINE_WIDTH = 76;            // base64 columns per line (MIME standard)
 const CHUNK_RAW_BYTES = 8190;     // multiple of 3, ≈ 8 KiB per chunk
+const SCRIPT_MAX_B64_CHARS = 16000; // single-shot script budget (one web_fetch response)
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex').toUpperCase();
+
+/**
+ * Structural summary of an sfnt (TTF/OTF) font: sorted table tags, plus
+ * "tag:length" for every table except glyf/loca — the two tables WOFF2
+ * reconstructs (transforms may change their bytes without changing the font).
+ */
+function ttfTableSummary(buf) {
+  const sig = buf.slice(0, 4).toString('latin1');
+  if (sig !== '\u0000\u0001\u0000\u0000' && sig !== 'true') throw new Error('not an sfnt (magic)');
+  const count = buf.readUInt16BE(4);
+  const tags = [];
+  const lengths = [];
+  for (let i = 0; i < count; i++) {
+    const off = 12 + i * 16;
+    const tag = buf.slice(off, off + 4).toString('latin1');
+    const len = buf.readUInt32BE(off + 12);
+    tags.push(tag);
+    if (tag !== 'glyf' && tag !== 'loca') lengths.push(`${tag}:${len}`);
+  }
+  return `${tags.sort().join(',')}|${lengths.sort().join(',')}`;
+}
+
+// Every input is pinned in sources/sources.lock; refuse to build on drift.
+function verifySourcesLock() {
+  if (!existsSync(LOCK)) throw new Error('missing sources/sources.lock — pin your inputs');
+  const want = new Map(
+    readFileSync(LOCK, 'utf8').split('\n').filter(Boolean).map((line) => {
+      const [h, ...rest] = line.trim().split(/\s+/);
+      return [rest.join(' '), h];
+    }),
+  );
+  const used = new Set();
+  for (const font of fonts) {
+    if (font.sourceFile) used.add(font.sourceFile);
+    if (font.ttf) used.add(font.ttf);
+    used.add(font.license.textFile);
+  }
+  for (const rel of used) {
+    const p = join(SRC, rel);
+    if (!existsSync(p)) throw new Error(`missing source: ${p}`);
+    const got = sha256(readFileSync(p));
+    const expected = want.get(rel);
+    if (!expected) throw new Error(`sources.lock: no entry for ${rel}`);
+    if (got !== expected) {
+      throw new Error(`sources.lock mismatch for ${rel}: got ${got}, expected ${expected} — update the lock only if you intend to change the pin`);
+    }
+  }
+}
 
 function b64wrap(buf) {
   const b64 = buf.toString('base64'); // no line breaks
@@ -85,7 +140,7 @@ const fonts = [
     family: 'Open Sauce Sans',
     weight: 400,
     style: 'normal',
-    subset: 'latin',
+    subset: 'latin,latin-ext,greek,vietnamese',
     ttf: 'oss-regular.ttf',
     kind: 'convert',
     upstream: [{
@@ -104,7 +159,7 @@ const fonts = [
     family: 'Open Sauce Sans',
     weight: 600,
     style: 'normal',
-    subset: 'latin',
+    subset: 'latin,latin-ext,greek,vietnamese',
     ttf: 'oss-semibold.ttf',
     kind: 'convert',
     upstream: [{
@@ -123,7 +178,7 @@ const fonts = [
     family: 'Open Sauce Sans',
     weight: 700,
     style: 'normal',
-    subset: 'latin',
+    subset: 'latin,latin-ext,greek,vietnamese',
     ttf: 'oss-bold.ttf',
     kind: 'convert',
     upstream: [{
@@ -150,10 +205,23 @@ async function loadWoff2(font) {
   // convert foundry TTF -> WOFF2 with wawoff2 (Google woff2 wasm port)
   const ttfPath = join(SRC, font.ttf);
   if (!existsSync(ttfPath)) throw new Error(`missing TTF: ${ttfPath}`);
-  const { compress } = await import('wawoff2');
+  const { compress, decompress } = await import('wawoff2');
   const ttf = readFileSync(ttfPath);
+  const sig = ttf.slice(0, 4).toString('latin1');
+  if (sig !== '\u0000\u0001\u0000\u0000' && sig !== 'true' && sig !== 'OTTO') {
+    throw new Error(`not a TTF (magic): ${ttfPath}`);
+  }
   const woff2 = Buffer.from(await compress(ttf));
   if (woff2.slice(0, 4).toString('latin1') !== 'wOF2') throw new Error(`conversion failed for ${font.ttf}`);
+  // round-trip: decompressing must yield an sfnt with the same tables.
+  // (Byte-exact equality is NOT guaranteed by WOFF2 — table order and padding
+  // may legitimately differ — so compare the table structure instead.)
+  const back = Buffer.from(await decompress(woff2));
+  const ttfSummary = ttfTableSummary(ttf);
+  const backSummary = ttfTableSummary(back);
+  if (ttfSummary !== backSummary) {
+    throw new Error(`round-trip mismatch for ${font.ttf}\n  input:  ${ttfSummary}\n  output: ${backSummary}`);
+  }
   return woff2;
 }
 
@@ -198,19 +266,28 @@ function buildScript(font, woff2, rebuildName) {
   const lines = [];
   for (let i = 0; i < b64.length; i += LINE_WIDTH) lines.push(b64.slice(i, i + LINE_WIDTH));
   const body = lines.join('\n');
+  // an improbable delimiter so no base64 line can terminate the heredoc early
+  const delimiter = 'FONTFERRY_B64_EOF_2026';
   const sh = `#!/usr/bin/env bash
 # FontFerry single-shot rebuild: ${font.id}
 # source: ${font.upstream[0].url}
 # decode: base64 -d (whitespace ignored) -> sha256 verification
 set -eu
+if command -v sha256sum >/dev/null 2>&1; then
+  h() { sha256sum "$1" | awk '{print toupper($1)}'; }
+elif command -v shasum >/dev/null 2>&1; then
+  h() { shasum -a 256 "$1" | awk '{print toupper($1)}'; }
+else
+  echo "need sha256sum or shasum -a 256" >&2; exit 1
+fi
 expected="${sha256(woff2)}"
 out="${rebuildName}"
-cat > "\${out}.b64" <<'EOF'
+cat > "\${out}.b64" <<'${delimiter}'
 ${body}
-EOF
+${delimiter}
 tr -d '[:space:]' < "\${out}.b64" | base64 -d > "\${out}"
 rm -f "\${out}.b64"
-actual=$(sha256sum "\${out}" | awk '{print toupper($1)}')
+actual=$(h "\${out}")
 if [ "$actual" = "$expected" ]; then
   echo "OK \${out} sha256=\${actual}"
 else
@@ -224,7 +301,7 @@ fi
 function buildDemoPage(fontsData) {
   const faces = fontsData.map((f) => {
     const dataUri = `data:font/woff2;base64,${f.woff2.toString('base64')}`;
-    return `  @font-face {\n    font-family: '${f.font.family}';\n    font-weight: ${f.font.weight};\n    font-style: ${f.font.style};\n    src: url("${dataUri}") format("woff2");\n  }`;
+    return `  @font-face {\n    font-family: '${f.font.family}';\n    font-weight: ${f.font.weight};\n    font-style: ${f.font.style};\n    src: url("${dataUri}") format("woff2");\n    font-display: swap;\n  }`;
   }).join('\n');
   const sample = `<!doctype html>
 <html lang="en">
@@ -247,14 +324,17 @@ ${faces}
 <h1>FontFerry · rendered from embedded data: URIs</h1>
 <p>This page embeds the four WOFF2 fonts built by <code>builder/build.mjs</code> as
 <code>data:font/woff2;base64,...</code> URIs. No external requests.</p>
-<div class="card"><h2>Chakra Petch 700</h2><small>latin subset · OFL-1.1</small>
-  <p class="chakra w700" style="font-size:1.6rem">The quick brown fox jumps over the lazy dog — 0123456789</p></div>
-<div class="card"><h2>Open Sauce Sans 400</h2><small>latin · OFL-1.1</small>
-  <p class="oss w400" style="font-size:1.4rem">The quick brown fox jumps over the lazy dog — 0123456789</p></div>
-<div class="card"><h2>Open Sauce Sans 600</h2><small>latin · OFL-1.1</small>
-  <p class="oss w600" style="font-size:1.4rem">The quick brown fox jumps over the lazy dog — 0123456789</p></div>
-<div class="card"><h2>Open Sauce Sans 700</h2><small>latin · OFL-1.1</small>
-  <p class="oss w700" style="font-size:1.4rem">The quick brown fox jumps over the lazy dog — 0123456789</p></div>
+${fontsData.map((f) => {
+    const chakra = f.font.family.includes('Chakra');
+    const cls = chakra ? 'chakra w700' : `oss w${f.font.weight}`;
+    const size = chakra ? '1.6rem' : '1.4rem';
+    return `<div class="card"><h2>${f.font.family} ${f.font.weight}</h2><small>${f.font.subset} · ${f.manifest.license.spdx}</small>
+  <p class="${cls}" style="font-size:${size}">The quick brown fox jumps over the lazy dog — 0123456789</p></div>`;
+  }).join('\n')}
+<footer class="card">
+  <p><strong>Font licenses:</strong> Chakra Petch © 2018 The Chakra Petch Project Authors; Open Sauce Sans © 2020 The Open Sauce Sans Authors. All four fonts are licensed under the SIL Open Font License 1.1.</p>
+  <p><a href="licenses/OFL-ChakraPetch.txt">OFL-ChakraPetch.txt</a> · <a href="licenses/OFL-OpenSauceSans.txt">OFL-OpenSauceSans.txt</a> · the full notices also repeat in every manifest.</p>
+</footer>
 </body>
 </html>
 `;
@@ -262,6 +342,7 @@ ${faces}
 }
 
 async function main() {
+  verifySourcesLock();
   mkdirSync(OUT, { recursive: true });
   for (const d of ['chunks', 'fonts', 'rebuilt', 'scripts', 'licenses']) mkdirSync(join(OUT, d), { recursive: true });
   mkdirSync(WEB, { recursive: true });
@@ -341,7 +422,7 @@ async function main() {
 
     // single-shot script (only when it fits a single web_fetch response comfortably)
     const b64chars = manifest.base64_chars;
-    if (b64chars <= 16000) {
+    if (b64chars <= SCRIPT_MAX_B64_CHARS) {
       writeFileSync(join(OUT, 'scripts', font.id + '.sh'), buildScript(font, woff2, font.rebuildName), 'utf8');
     }
   }
@@ -398,8 +479,8 @@ async function main() {
     '',
     'Consuming (agent, offline sandbox):',
     '  1. fetch /manifest.txt (or per-font /chunks/<id>/000.txt …) as plain text',
-    '  2. save each chunk page verbatim to <dir>/<nnn>.txt',
-    '  3. run  client/rebuild.sh <manifest.json> <dir> <out.woff2>',
+    '  2. save each chunk page verbatim next to <dir>/MANIFEST.txt',
+    '  3. run  client/rebuild.sh <dir>/MANIFEST.txt <dir> <out.woff2>',
     '',
     'Consuming (networked sandbox):',
     '  sh client/fetch_sandbox.sh <manifest-url> <out.woff2>',

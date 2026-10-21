@@ -1,6 +1,6 @@
 FontFerry store · protocol fonttext/1
 
-generated (UTC): 2026-10-21T04:47:15.361Z
+generated (UTC): 2026-10-21T14:42:23.204Z
 fonts: 4
 
 - chakra-petch-700 (Chakra Petch 700) 9900 bytes · 2 chunks · sha256 CE5095DC1CB200AAA939E38067A0677018D10E9F26EC38CDCF1557AC524FC775 · rebuilt as chakra-petch-700.woff2
@@ -10,8 +10,8 @@ fonts: 4
 
 Consuming (agent, offline sandbox):
   1. fetch /manifest.txt (or per-font /chunks/<id>/000.txt …) as plain text
-  2. save each chunk page verbatim to <dir>/<nnn>.txt
-  3. run  client/rebuild.sh <manifest.json> <dir> <out.woff2>
+  2. save each chunk page verbatim next to <dir>/MANIFEST.txt
+  3. run  client/rebuild.sh <dir>/MANIFEST.txt <dir> <out.woff2>
 
 Consuming (networked sandbox):
   sh client/fetch_sandbox.sh <manifest-url> <out.woff2>

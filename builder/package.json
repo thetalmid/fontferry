@@ -1,4 +1,15 @@
 {
+  "name": "fontferry-builder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FontFerry deterministic build: chunked base64 font delivery bundles",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "wawoff2": "^2.0.1"
   }

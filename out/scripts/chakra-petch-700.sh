@@ -3,9 +3,16 @@
 # source: https://fonts.gstatic.com/s/chakrapetch/v13/cIflMapbsEk7TDLdtEz1BwkeJI91R5_F.woff2
 # decode: base64 -d (whitespace ignored) -> sha256 verification
 set -eu
+if command -v sha256sum >/dev/null 2>&1; then
+  h() { sha256sum "$1" | awk '{print toupper($1)}'; }
+elif command -v shasum >/dev/null 2>&1; then
+  h() { shasum -a 256 "$1" | awk '{print toupper($1)}'; }
+else
+  echo "need sha256sum or shasum -a 256" >&2; exit 1
+fi
 expected="CE5095DC1CB200AAA939E38067A0677018D10E9F26EC38CDCF1557AC524FC775"
 out="chakra-petch-700.woff2"
-cat > "${out}.b64" <<'EOF'
+cat > "${out}.b64" <<'FONTFERRY_B64_EOF_2026'
 d09GMgABAAAAACasAA4AAAAAX/AAACZVAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGngbu1QchHgG
 YACFJBEICt4gxh8Lg3oAATYCJAOHcAQgBYQsB4Z/GwNRMwPBxgGgAF8+m42oYeMgPBpcHxWlVDPP
 /usEbgy5PZiaXCUpIVhNG42b9ioti3wXQ8ErLcq5+F3fU8c/jU/XJ5GF5gxsG/mTnLwE9fv1fs/c
@@ -180,10 +187,10 @@ Z6BYqUhcJrPmjLNi3HTLueU5+KNG/hu+QEQLG1SuIIcta+zYEowsWDSGxZGDrcocFI0SdrHHCZWG
 K3VzfEP8BHOwPw7AgTh4TMi2vr4xoZijhtjBvg3B8/0C/ak3gCppqFyjYqzaYK2FSjFTThfVNFGD
 tTWqx4pmIprHUV9sF7ryjfSnlFwmk0mUjVIqwfoHLdK6IC3S5hCVQSZiYsHGbOrvG7JiMPWfJUkm
 p76cWlZxBjLVbnPkBqKpipo64VVegGG1RCLelCJYOg2EEsU6FKEE
-EOF
+FONTFERRY_B64_EOF_2026
 tr -d '[:space:]' < "${out}.b64" | base64 -d > "${out}"
 rm -f "${out}.b64"
-actual=$(sha256sum "${out}" | awk '{print toupper($1)}')
+actual=$(h "${out}")
 if [ "$actual" = "$expected" ]; then
   echo "OK ${out} sha256=${actual}"
 else

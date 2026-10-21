@@ -16,21 +16,29 @@ The protocol is `fonttext/1`, specified in [SPEC.md](./SPEC.md).
 
 ```
 builder/build.mjs               deterministic build: chunks, manifests, scripts, self-test
+builder/package.json            build tooling (dep: wawoff2)
 server/serve.mjs                text/plain static server (no deps; ETag = sha256)
 client/rebuild.sh               pure-POSIX-sh reassembly + verification (offline sandbox)
 client/fetch_sandbox.sh         curl-based fetch + rebuild (networked sandbox)
-sources/                        upstream fonts + OFL texts (pinned)
+sources/                        upstream fonts + OFL texts (pinned, see sources.lock)
+sources/sources.lock            SHA-256 pin of every build input; the build refuses drift
 out/                            generated store (see below)
 out/chunks/<id>/NNN.txt         chunk pages: base64 @ 76 cols, LF, framing lines
 out/chunks/<id>/MANIFEST.txt    line-based reassembly manifest (no jq needed)
-out/manifests/<id>.txt          per-font JSON manifest, text/plain
+out/manifests/<id>.json/.txt    per-font JSON manifest, text/plain (byte-identical pair)
 out/fonts/<id>.woff2            binary originals (humans/browsers)
+out/scripts/<id>.sh             single-shot heredoc rebuild (when payload fits one fetch)
+out/rebuilt/<id>.woff2          self-test output (expected to equal fonts/<id>.woff2)
 out/licenses/                   OFL 1.1 texts (redistribution requirement)
-web/index.html                  demo page with @font-face data: URIs
+out/ROOT.txt / store.json/.txt  store index (generated_utc differs per build)
+web/index.html                  demo page with @font-face data: URIs + OFL notice
 ```
 
 `out/` is generated; rebuild it anytime with `node builder/build.mjs`.
-Deterministic: identical inputs ⇒ identical bytes.
+Deterministic: identical inputs ⇒ identical bytes everywhere except the
+`generated_utc` timestamp in `out/store.json`, `out/store.txt` and
+`out/ROOT.txt`. CI (`./.github/workflows/determinism.yml`) enforces this by
+rebuilding and diffing the committed store.
 
 ## Build and serve
 
@@ -84,7 +92,8 @@ sh client/fetch_sandbox.sh \
 | Whole-file hash mismatch | aborts; output file never left in a partial state (temp file + rename) |
 | Corrupt/undecodable base64 | fails at decode; same selective-retry guidance |
 | Output path is a directory | fails fast with a clear message |
-| Corporate proxy intercepts loopback | `fetch_sandbox.sh` uses `curl --noproxy '*'`; override `CURL_BIN` if needed |
+| Corporate proxy intercepts loopback | `fetch_sandbox.sh` adds `localhost,127.0.0.1,::1` to `NO_PROXY`; remote hosts still use the configured proxy |
+| Wrong/updated manifest hash | `fetch_sandbox.sh` verifies every chunk against the server's manifest SHA-256 before reassembling |
 
 Exit code is `0` only when the final whole-file hash matches the manifest.
 
@@ -119,7 +128,7 @@ Research grounding for each of these is in the Sources section below.
 | `server/serve.mjs` | Plain-text serving semantics (text/plain, ETag, no redirects) |
 | `client/rebuild.sh` | The offline reassembly path — the piece the agent actually runs |
 | `client/fetch_sandbox.sh` | Networked version of the same flow |
-| `sources/` | Pinned upstream fonts + OFL texts; the build's only inputs |
+| `sources/` | Upstream fonts + OFL texts — the build's only inputs, pinned by `sources/sources.lock` (SHA-256 per file; the build refuses to proceed on drift) |
 | `out/` | The generated store (committed so the repo works without a build) |
 | `SPEC.md` | The protocol contract (`fonttext/1`) |
 | `web/index.html` | Demo page with the four fonts embedded as data: URIs |

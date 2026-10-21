@@ -39,9 +39,11 @@ Research grounding (see `README.md` → "Design notes" for sources):
 | `/licenses/<file>` | OFL license texts | text/plain |
 | `/web/` | demo page with `data:` URI fonts | text/html |
 
-All URLs are absolute in the manifest, short (<250 chars), and appear only in
-the manifest itself — satisfying "URL must appear in prior context" style
-whitelisting, if any.
+Chunk URLs in the manifest are root-relative (`/chunks/<font_id>/NNN.txt`),
+short (<250 chars), and appear only in the manifest itself — satisfying "URL
+must appear in prior context" style whitelisting, if any. Clients resolve them
+against the manifest's own base URL (see `client/fetch_sandbox.sh`); the
+service never redirects.
 
 ## The manifest (per font)
 
@@ -116,11 +118,17 @@ whitelisting, if any.
 ## Rebuilding deliverables from source
 
 ```sh
-# prerequisites: Node.js ≥ 20, bash (Git Bash/WSL/macOS/Linux) and curl
+# prerequisites: Node.js ≥ 20, bash (Git Bash/WSL/macOS/Linux), curl,
+# and either sha256sum (coreutils) or shasum -a 256 (macOS)
 cd builder && npm install          # wawoff2 (Google woff2 wasm port)
 node build.mjs                     # regenerates ../out/ and ../web/index.html
 node ../server/serve.mjs --port 8737   # serve out/ as described above
 ```
 
+The build verifies `sources/sources.lock` before emitting anything: every
+input's SHA-256 must match the pin, and for TTF sources the WOFF2 conversion
+is round-trip-checked (decompress must reproduce the same table structure).
+
 Deterministic output: identical inputs ⇒ identical chunk pages, manifests
-(except the `generated_utc` field in the store index) and hashes.
+(except the `generated_utc` field in the store index) and hashes. CI
+(`.github/workflows/determinism.yml`) rebuilds and diffs the committed store.

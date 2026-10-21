@@ -1,0 +1,39 @@
+name: deterministic build
+
+on:
+  push:
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: builder/package-lock.json
+
+      - name: Install build dependency (wawoff2)
+        working-directory: builder
+        run: npm ci
+
+      - name: Rebuild the store
+        working-directory: builder
+        run: node build.mjs
+
+      - name: Committed store must reproduce byte-for-byte
+        run: |
+          git diff --exit-code -- out web \
+            ':(exclude)out/store.json' \
+            ':(exclude)out/store.txt' \
+            ':(exclude)out/ROOT.txt' || {
+              echo "::error::Rebuilt out/ differs from the committed store. Run 'node builder/build.mjs' and commit the result."
+              exit 1
+            }

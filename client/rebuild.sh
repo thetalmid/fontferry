@@ -13,11 +13,25 @@
 #   - resume-aware: an existing, already-verified part is reused (no
 #     re-decode) — delete part files to force re-decode
 #   - exits non-zero with the offending chunk index on any mismatch
+#   - a failed run never leaves a partial $OUT: assembly goes to $OUT.tmp,
+#     renamed only after whole-file verification passes; the temp file is
+#     removed on exit (success renames it away)
 set -eu
+
+if command -v sha256sum >/dev/null 2>&1; then
+  SHA256() { sha256sum "$1" | awk '{print toupper($1)}'; }
+elif command -v shasum >/dev/null 2>&1; then
+  SHA256() { shasum -a 256 "$1" | awk '{print toupper($1)}'; }
+else
+  echo "rebuild: need sha256sum (coreutils) or shasum -a 256 (macOS)" >&2
+  exit 1
+fi
 
 MANIFEST="${1:?usage: rebuild.sh <MANIFEST.txt> <chunk-dir> <out.woff2>}"
 CHUNKDIR="${2:?chunk dir required}"
 OUT="${3:?output path required}"
+
+trap 'rm -f "$OUT.tmp"' EXIT
 
 [ -f "$MANIFEST" ] || { echo "rebuild: manifest not found: $MANIFEST" >&2; exit 1; }
 [ -d "$CHUNKDIR" ] || { echo "rebuild: chunk dir not found: $CHUNKDIR" >&2; exit 1; }
@@ -43,7 +57,7 @@ while [ "$i" -lt "$N" ]; do
   part="$PARTDIR/$(basename "$OUT").part.$i"
   need=1
   if [ -f "$part" ]; then
-    have=$(sha256sum "$part" | awk '{print toupper($1)}')
+    have=$(SHA256 "$part")
     [ "$have" = "$csha" ] && need=0
   fi
 
@@ -52,7 +66,7 @@ while [ "$i" -lt "$N" ]; do
     [ -f "$src" ] || { echo "rebuild: chunk file missing: $src" >&2; exit 1; }
     # strip framing lines, drop all whitespace, decode
     grep -v '^#' "$src" | tr -d ' \t\r\n' | base64 -d > "$part"
-    have=$(sha256sum "$part" | awk '{print toupper($1)}')
+    have=$(SHA256 "$part")
     if [ "$have" != "$csha" ]; then
       echo "rebuild: chunk $i HASH MISMATCH ($cfile) expected=$csha got=$have" >&2
       exit 1
@@ -66,7 +80,7 @@ while [ "$i" -lt "$N" ]; do
 done
 
 mv "$OUT.tmp" "$OUT"
-actual=$(sha256sum "$OUT" | awk '{print toupper($1)}')
+actual=$(SHA256 "$OUT")
 if [ "$actual" = "$WHOLE" ]; then
   echo "OK $OUT sha256=$actual"
 else

@@ -4,7 +4,7 @@
   "family": "Open Sauce Sans",
   "weight": 400,
   "style": "normal",
-  "subset": "latin",
+  "subset": "latin,latin-ext,greek,vietnamese",
   "format": "woff2",
   "rebuilt_name": "open-sauce-sans-400.woff2",
   "encoding": "base64",

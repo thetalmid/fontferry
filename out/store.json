@@ -1,7 +1,7 @@
 {
   "protocol": "fonttext/1",
   "role": "store-index",
-  "generated_utc": "2026-10-21T04:47:15.361Z",
+  "generated_utc": "2026-10-21T14:42:23.204Z",
   "builder": "builder/build.mjs",
   "chunk_raw_bytes": 8190,
   "line_width": 76,

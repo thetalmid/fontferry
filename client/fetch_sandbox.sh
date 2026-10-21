@@ -5,25 +5,35 @@
 #   sh fetch_sandbox.sh <per-font-manifest-url> <out.woff2> [work-dir]
 #
 # Fetches a single-font JSON manifest (text/plain from the service), then
-# every chunk page from its absolute URL, stores them in a work directory,
-# and runs rebuild.sh. This is exactly the flow an agent with a curl-capable
-# sandbox would use; the same chunk pages are what a web_fetch-style text-only
-# tool would ingest.
+# every chunk page from its URL, stores them in a work directory, and runs
+# rebuild.sh. This is exactly the flow an agent with a curl-capable sandbox
+# would use; the same chunk pages are what a web_fetch-style text-only tool
+# would ingest.
 #
-# Requirements: curl, base64, sha256sum, grep, sed, awk (standard Unix).
+# Integrity: every chunk's decoded bytes are checked against the SHA-256 the
+# *server* lists in the manifest (not against a locally computed hash), so a
+# corrupted transfer is caught with the exact chunk index.
+#
+# Requirements: curl, base64, sha256sum or shasum, grep, sed, awk.
 set -eu
 
-# Local/loopback fetches must not go through a corporate proxy (407 risk).
+# Loopback fetches should not go through a corporate proxy (407 risk); remote
+# hosts must keep using the proxy configured via http_proxy/https_proxy.
 export NO_PROXY="${NO_PROXY:+$NO_PROXY,}localhost,127.0.0.1,::1"
 export no_proxy="$NO_PROXY"
 # Override CURL_BIN (e.g. /mnt/c/WINDOWS/system32/curl.exe on Windows) where
 # the system curl is forced through an intercepting proxy.
 CURL_BIN="${CURL_BIN:-curl}"
-CURL="$CURL_BIN --noproxy '*'"
+CURL="$CURL_BIN --noproxy localhost,127.0.0.1,::1"
 
 MANIFEST_URL="${1:?usage: fetch_sandbox.sh <manifest-url> <out.woff2> [work-dir]}"
 OUT="${2:?output path required}"
-WORK="${3:-$(mktemp -d)}"
+WORK="${3:-}"
+if [ -z "$WORK" ]; then
+  WORK=$(mktemp -d)
+  TMP_CREATED=1
+fi
+trap 'if [ "${TMP_CREATED:-0}" = 1 ]; then rm -rf "$WORK"; fi' EXIT
 mkdir -p "$WORK"
 
 echo "fetch: manifest $MANIFEST_URL"
@@ -38,13 +48,22 @@ BASE=$(echo "$MANIFEST_URL" | sed -E 's|(https?://[^/]+).*|\1|')
 FDIR="$WORK/$ID"
 mkdir -p "$FDIR"
 
-# For each chunk URL in the manifest, fetch the page and compute the decoded
-# part's SHA-256 (so rebuild.sh can verify per chunk).
-> "$FDIR/chunks.lst"
+# Extract (url, sha256) pairs for every chunk from the manifest JSON.
+awk '
+  /"url": "\/chunks\// {
+    u=$0; sub(/^.*"url": "/, "", u); sub(/",?$/, "", u)
+    urls[++n]=u
+  }
+  /"sha256": "/ {
+    h=$0; sub(/^.*"sha256": "/, "", h); sub(/",?$/, "", h)
+    hashes[n]=h
+  }
+  END { for (i=1;i<=n;i++) print urls[i] "\t" hashes[i] }
+' "$WORK/manifest.json" > "$FDIR/chunkpairs.lst"
+
 COUNT=0
-grep -o '"url": "/chunks/[^"]*"' "$WORK/manifest.json" | sed 's/.*chunks\///; s/"//' > "$FDIR/chunkurls.lst"
-while IFS= read -r rel; do
-  FULL="$BASE/chunks/$rel"
+while IFS=$'\t' read -r rel expected_sha; do
+  FULL="${BASE}${rel}"
   FILE=$(basename "$rel")
   if $CURL -fsSL --retry 2 --retry-delay 1 "$FULL" -o "$FDIR/$FILE"; then
     echo "fetch: $FULL -> $FDIR/$FILE"
@@ -53,12 +72,16 @@ while IFS= read -r rel; do
     exit 1
   fi
   grep -v '^#' "$FDIR/$FILE" | tr -d ' \t\r\n' | base64 -d > "$FDIR/$FILE.part"
-  SHA=$(sha256sum "$FDIR/$FILE.part" | awk '{print toupper($1)}')
+  ACTUAL=$(sha256sum "$FDIR/$FILE.part" | awk '{print toupper($1)}')
   rm -f "$FDIR/$FILE.part"
-  printf 'chunk_%s_sha256=%s\nchunk_%s_file=%s\n' "$COUNT" "$SHA" "$COUNT" "$FILE" >> "$FDIR/chunks.lst"
+  if [ "$ACTUAL" != "$expected_sha" ]; then
+    echo "fetch: chunk $COUNT HASH MISMATCH ($FILE) expected=$expected_sha got=$ACTUAL" >&2
+    exit 1
+  fi
+  printf 'chunk_%s_sha256=%s\nchunk_%s_file=%s\n' "$COUNT" "$expected_sha" "$COUNT" "$FILE" >> "$FDIR/chunks.lst"
   COUNT=$((COUNT+1))
-done < "$FDIR/chunkurls.lst"
-rm -f "$FDIR/chunkurls.lst"
+done < "$FDIR/chunkpairs.lst"
+rm -f "$FDIR/chunkpairs.lst"
 
 # Write the simple line-based manifest rebuild.sh consumes.
 {
